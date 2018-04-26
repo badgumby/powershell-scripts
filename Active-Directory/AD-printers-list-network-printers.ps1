@@ -1,0 +1,1 @@
+﻿Get-ADObject -LDAPFilter "(objectCategory=printQueue)" -Properties drivername, location, printername, portname, servername, description | select printername, description, drivername, location, servername | export-csv C:\users\user\Desktop\Printers.csv
