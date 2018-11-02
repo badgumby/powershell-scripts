@@ -1,4 +1,10 @@
-﻿# Get the ID and security principal of the current user account
+﻿if ($PSVersionTable.PSVersion.Major -lt 5) {
+    $ver = $PSVersionTable.PSVersion
+    Write-Host "Minimum Powershell version required is 5.1"
+    Write-Host "You are running: $ver"
+   
+} else {
+# Get the ID and security principal of the current user account
 $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
 $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
  
@@ -65,3 +71,4 @@ Start-Service -Name sshd
 cd "C:\Program Files\$folder"
 .\ssh-keygen.exe -A
 .\ssh-keygen.exe -l -f "$env:ProgramData\ssh\ssh_host_ed25519_key" -E md5
+}
