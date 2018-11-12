@@ -1,3 +1,6 @@
+# To have this file load by default, name it as "Microsoft.PowerShell_profile.ps1"
+# Place it in the following directory: C:\Windows\System32\WindowsPowerShell\v1.0\
+
 function SyncAzureEO {
     $status = Get-ADSyncConnectorRunStatus
     if ($status.RunState -eq "Busy") {
