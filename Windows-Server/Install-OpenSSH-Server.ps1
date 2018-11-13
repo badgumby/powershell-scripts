@@ -2,15 +2,15 @@
     $ver = $PSVersionTable.PSVersion
     Write-Host "Minimum Powershell version required is 5.1"
     Write-Host "You are running: $ver"
-   
+
 } else {
 # Get the ID and security principal of the current user account
 $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
 $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
- 
+
 # Get the security principal for the Administrator role
 $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
- 
+
 # Check to see if we are currently running "as Administrator"
 if ($myWindowsPrincipal.IsInRole($adminRole))
    {
@@ -21,23 +21,23 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 else
    {
    # We are not running "as Administrator" - so relaunch as administrator
-   
+
    # Create a new process object that starts PowerShell
    $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell";
-   
+
    # Specify the current script path and name as a parameter
    $newProcess.Arguments = $myInvocation.MyCommand.Definition;
-   
+
    # Indicate that the process should be elevated
    $newProcess.Verb = "runas";
-   
+
    # Start the new process
    [System.Diagnostics.Process]::Start($newProcess);
-   
+
    # Exit from the current, unelevated, process
    exit
    }
- 
+
 # Run your code that needs to be elevated here
 $version = "v7.7.2.0p1-Beta"
 $url = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/$version/OpenSSH-Win64.zip"
@@ -58,6 +58,9 @@ Expand-Archive $downloadOutput -DestinationPath "C:\Program Files\"
 
 # Create firewall rules
 New-NetFirewallRule -Name sshd -DisplayName 'OpenSSH SSH Server' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+
+# Set Powershell as default shell
+New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
 
 # Configure OpenSSH services for automatic startup
 Set-Service -Name ssh-agent -StartupType Automatic
