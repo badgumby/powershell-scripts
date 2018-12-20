@@ -1,0 +1,42 @@
+[Net.ServicePointManager]::SecurityProtocol = 'TLS11','TLS12','ssl3'
+
+# Variables
+$tenant = "domain"
+$Username = "guy.man@domain.com/token"
+$Token = "010101101010skskskssksks010110101"
+$requesterEmail = "some.dude@domain.com"
+
+
+$uri = "https://$tenant.zendesk.com/api/v2/tickets.json"
+$json = @"
+{
+    "ticket": {
+        "subject": "Example Ticket",
+        "comment": {
+            "body": "Look at this thing!"
+         }, 
+         "requester": {
+            "email": "$requesterEmail"
+            }
+        }
+ }
+"@
+$base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $Username,$Token)))
+
+$results = @()
+
+try {
+
+    $results = Invoke-RestMethod -Uri $uri -Method Post -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -ContentType "application/json" -Body $json
+    echo "Ticket #: $($results.ticket.id)"
+    echo "Creation Time: $($results.ticket.created_at)"
+
+} catch {
+
+    $ErrorMessage = $_.Exception.Message
+    $FailedItem = $_.Exception.ItemName
+    echo $ErrorMessage
+    echo $FailedItem
+
+}
+
