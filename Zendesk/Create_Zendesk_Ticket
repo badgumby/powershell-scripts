@@ -1,42 +1,76 @@
 [Net.ServicePointManager]::SecurityProtocol = 'TLS11','TLS12','ssl3'
 
-# Variables
-$tenant = "domain"
-$Username = "guy.man@domain.com/token"
-$Token = "010101101010skskskssksks010110101"
-$requesterEmail = "some.dude@domain.com"
-
-
+# Ticket variables
 $uri = "https://$tenant.zendesk.com/api/v2/tickets.json"
-$json = @"
-{
-    "ticket": {
-        "subject": "Example Ticket",
-        "comment": {
-            "body": "Look at this thing!"
-         }, 
-         "requester": {
-            "email": "$requesterEmail"
-            }
-        }
- }
-"@
+$requesterEmail = "another.person@domain.com"
+$subject = "Example Ticket"
+$body = "What does this thing do?"
+$assignee = "bad.gumby@domain.com"
+$backupAssignee = ""
+
+# Lookup agents/admins
+$agents = ""
+$search = "https://$tenant.zendesk.com/api/v2/users.json?role[]=agent&role[]=admin"
+$agents = Invoke-RestMethod -Uri $search -Method Get -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)}
+
+# Zendesk login variables
+$tenant = "domain"
+$Username = "user@domain.com/token"
+$Token = "token_goes_here"
 $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $Username,$Token)))
 
-$results = @()
+$assigneeID = ""
+foreach ($i in $agents.users) {
 
-try {
+    $currentID = $i.id
+    $currentEmail = $i.email
+    
+    if ($currentEmail -ilike $assignee) {
 
-    $results = Invoke-RestMethod -Uri $uri -Method Post -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -ContentType "application/json" -Body $json
-    echo "Ticket #: $($results.ticket.id)"
-    echo "Creation Time: $($results.ticket.created_at)"
+        $assigneeID = $currentID
 
-} catch {
+     } else {
 
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    echo $ErrorMessage
-    echo $FailedItem
+        # Do nothing
+
+     }
 
 }
 
+if (!$assigneeID) {
+
+    echo "No ID found"
+
+} else {
+
+    try {
+    
+        $json = @"
+        {
+            "ticket": {
+                "subject": "$subject",
+                "comment": {
+                    "body": "$body"
+                }, 
+                "requester": {
+                    "email": "$requesterEmail"
+                },
+                "priority": "normal",
+                "assignee_id": "$assigneeID"
+            }
+        }
+"@
+            
+        echo "ID found: $assigneeID"
+        $results = @()
+        $results = Invoke-RestMethod -Uri $uri -Method Post -Headers @{Authorization=("Basic {0}" -f $base64AuthInfo)} -ContentType "application/json" -Body $json
+        echo "Ticket #: $($results.ticket.id)"
+        echo "Creation Time: $($results.ticket.created_at)"
+
+    } catch {
+        
+        $ErrorMessage = $_.Exception.Message
+        echo $ErrorMessage
+        
+    }
+}
